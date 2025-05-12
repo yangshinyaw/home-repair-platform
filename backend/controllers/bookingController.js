@@ -217,4 +217,79 @@ const addReviewToBooking = async (req, res) => {
       
       // Calculate new average rating
       const newCount = currentCount + 1;
-      const newAverage =
+      const newAverage = ((currentRating * currentCount) + rating) / newCount;
+      
+      // Update professional's rating
+      professional.professional.rating = {
+        average: newAverage,
+        count: newCount,
+      };
+      
+      await professional.save();
+    }
+    
+    const updatedBooking = await booking.save();
+    res.json(updatedBooking);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc    Add notes to a booking
+// @route   POST /api/bookings/:id/notes
+// @access  Private
+const addNoteToBooking = async (req, res) => {
+  try {
+    const { text } = req.body;
+    
+    const booking = await Booking.findById(req.params.id);
+    
+    if (!booking) {
+      return res.status(404).json({ message: 'Booking not found' });
+    }
+    
+    // Check if user is authorized to add notes to this booking
+    if (
+      booking.homeowner.toString() !== req.user._id.toString() &&
+      booking.professional.toString() !== req.user._id.toString() &&
+      req.user.role !== 'admin'
+    ) {
+      return res.status(403).json({ message: 'Not authorized to add notes to this booking' });
+    }
+    
+    // Add note to booking
+    booking.notes.push({
+      text,
+      createdBy: req.user._id,
+    });
+    
+    const updatedBooking = await booking.save();
+    res.json(updatedBooking);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc    Upload problem images for a booking
+// @route   POST /api/bookings/:id/images
+// @access  Private/Homeowner
+const uploadProblemImages = async (req, res) => {
+  try {
+    // This function would handle file upload to AWS S3 or similar
+    // Implementation would depend on specific file handling solution
+    res.status(501).json({ message: 'Image upload functionality to be implemented' });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+module.exports = {
+  createBooking,
+  getMyBookings,
+  getBookingById,
+  updateBookingStatus,
+  addQuoteToBooking,
+  addReviewToBooking,
+  addNoteToBooking,
+  uploadProblemImages,
+};
