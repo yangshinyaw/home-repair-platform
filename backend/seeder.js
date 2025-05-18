@@ -117,3 +117,55 @@ const users = [
     },
   },
 ];
+
+// Import data to DB
+const importData = async () => {
+  try {
+    // Clear existing data
+    await User.deleteMany();
+    await Service.deleteMany();
+    await Booking.deleteMany();
+
+    // Insert services
+    const createdServices = await Service.insertMany(services);
+    
+    // Add service IDs to the professional
+    const professionalUser = users.find(user => user.role === 'professional');
+    if (professionalUser && professionalUser.professional) {
+      professionalUser.professional.services = createdServices
+        .filter(service => service.category === 'plumbing')
+        .map(service => service._id);
+    }
+
+    // Insert users
+    await User.insertMany(users);
+
+    console.log('Data imported!');
+    process.exit();
+  } catch (error) {
+    console.error(`Error: ${error.message}`);
+    process.exit(1);
+  }
+};
+
+// Delete data from DB
+const destroyData = async () => {
+  try {
+    await User.deleteMany();
+    await Service.deleteMany();
+    await Booking.deleteMany();
+
+    console.log('Data destroyed!');
+    process.exit();
+  } catch (error) {
+    console.error(`Error: ${error.message}`);
+    process.exit(1);
+  }
+};
+
+// Check arguments and run appropriate function
+if (process.argv[2] === '-d') {
+  destroyData();
+} else {
+  importData();
+}
